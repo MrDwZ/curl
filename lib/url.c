@@ -1295,6 +1295,8 @@ ConnectionExists(struct Curl_easy *data,
             if(!Curl_ssl_config_matches(&needle->proxy_ssl_config,
                                         &check->proxy_ssl_config))
               continue;
+            if(!Curl_ssl_config_matches(&needle->ssl_config,
+                                        &check->ssl_config))
             if(check->proxy_ssl[FIRSTSOCKET].state != ssl_connection_complete)
               continue;
           }
