@@ -1,3 +1,29 @@
+#***************************************************************************
+#                                  _   _ ____  _
+#  Project                     ___| | | |  _ \| |
+#                             / __| | | | |_) | |
+#                            | (__| |_| |  _ <| |___
+#                             \___|\___/|_| \_\_____|
+#
+# Copyright (C) 2021, Daniel Stenberg, <daniel@haxx.se>, et al.
+#
+# This software is licensed as described in the file COPYING, which
+# you should have received as part of this distribution. The terms
+# are also available at https://curl.se/docs/copyright.html.
+#
+# You may opt to use, copy, modify, merge, publish, distribute and/or sell
+# copies of the Software, and permit persons to whom the Software is
+# furnished to do so, under the terms of the COPYING file.
+#
+# This software is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY
+# KIND, either express or implied.
+#
+###########################################################################
+
+# The results of each of these jobs can be found at 
+# https://curl.zuul.vexxhost.dev/builds. As of November 2021 they are not being
+# propagated to the Github "checks" UI, you need to check for them manually.
+
 ---
 - job:
     name: curl-base
@@ -45,6 +71,7 @@
     vars:
       curl_env:
         T: normal
+        TFLAGS: "!2034 !2037 !2041"
         C: >-
           --with-openssl
           --disable-proxy
@@ -95,7 +122,7 @@
         T: novalgrind
         QUICHE: "yes"
         C: >-
-          --with-openssl={{ ansible_user_dir }}/quiche/deps/boringssl/src
+          --with-openssl={{ ansible_user_dir }}/quiche/quiche/deps/boringssl/src
           --with-quiche={{ ansible_user_dir }}/quiche/target/release
         LD_LIBRARY_PATH: "{{ ansible_user_dir }}/quiche/target/release:/usr/local/lib"
 
@@ -109,9 +136,11 @@
         - libzstd-dev
       curl_env:
         T: debug-rustls
-        RUSTLS_VERSION: v0.6.0
+        # Keep this in sync with the version in docs/RUSTLS.md
+        RUSTLS_VERSION: v0.8.2
+        LIBS: -lm
         C: >-
-          --with-rustls={{ ansible_user_dir }}/crust
+          --with-rustls={{ ansible_user_dir }}/rustls
 
 - job:
     name: curl-debug-bearssl
@@ -221,7 +250,25 @@
         OPENSSL3: "yes"
         C: >-
           --with-openssl={{ ansible_user_dir }}/openssl3
-        LD_LIBRARY_PATH: "{{ ansible_user_dir }}/openssl3/lib:/usr/local/lib"
+        LD_LIBRARY_PATH: "{{ ansible_user_dir }}/openssl3/lib64:/usr/local/lib"
+        TFLAGS: https ftps
+
+- job:
+    name: curl-debug-mbedtls3
+    parent: curl-base
+    vars:
+      curl_apt_packages:
+        - libpsl-dev
+        - libbrotli-dev
+        - libzstd-dev
+      curl_env:
+        CC: gcc-8
+        CXX: g++-8
+        T: debug
+        MBEDTLS3: "yes"
+        C: >-
+          --with-mbedtls={{ ansible_user_dir }}/mbedtls3
+        LD_LIBRARY_PATH: "{{ ansible_user_dir }}/mbedtls3/lib:/usr/local/lib"
         TFLAGS: https ftps
 
 - job:
@@ -524,6 +571,7 @@
       - curl-novalgrind-ngtcp2-gnutls
       - curl-debug-wolfssl
       - curl-debug-openssl3
+      - curl-debug-mbedtls3
       - curl-debug-mesalink
       - curl-debug-clang-with-openssl
       - curl-debug-clang-disable-alt-svc-with-openssl

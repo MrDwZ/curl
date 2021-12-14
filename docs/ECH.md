@@ -55,7 +55,7 @@ The following set of resources is currently known to be available.
 
 ### PR 4011 (Jun 2019) expected in curl release 7.67.0 (Oct 2019)
 
--   Details [below](#pr4011);
+-   Details [below](#pr-4011);
 
 -   New configuration option: `--enable-ech`;
 
@@ -97,7 +97,7 @@ functionality or to favour any particular TLS-providing backend. Specifically,
 the change reserves a feature bit for ECH support (symbol
 `CURL_VERSION_ECH`), implements setting and reporting of this bit, includes
 dummy book-keeping for the symbol, adds a build-time configuration option
-(`--enable-ech`), provides an extensible check for resources available to
+(`--enable-ech`), provides an extendable check for resources available to
 provide ECH support, and defines a compiler pre-processor symbol (`USE_ECH`)
 accordingly.
 
@@ -110,7 +110,7 @@ Limitations:
 
 -   Framework is incomplete, as it covers autoconf, but not CMake.
 
--   Check for available resources, although extensible, refers only to
+-   Check for available resources, although extendable, refers only to
     specific work in progress ([described
     here](https://github.com/sftcd/openssl/tree/master/esnistuff)) to
     implement ECH for OpenSSL, as this is the immediate motivation

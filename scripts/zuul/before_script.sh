@@ -96,6 +96,14 @@ if [ "$TRAVIS_OS_NAME" = linux -a "$OPENSSL3" ]; then
   make install_sw
 fi
 
+if [ "$TRAVIS_OS_NAME" = linux -a "$MBEDTLS3" ]; then
+  cd $HOME
+  git clone --depth=1 -b v3.0.0 https://github.com/ARMmbed/mbedtls
+  cd mbedtls
+  make
+  make DESTDIR=$HOME/mbedtls3 install
+fi
+
 if [ "$TRAVIS_OS_NAME" = linux -a "$LIBRESSL" ]; then
   cd $HOME
   git clone --depth=1 -b v3.1.4 https://github.com/libressl-portable/portable.git libressl-git
@@ -112,20 +120,25 @@ if [ "$TRAVIS_OS_NAME" = linux -a "$QUICHE" ]; then
   curl https://sh.rustup.rs -sSf | sh -s -- -y
   source $HOME/.cargo/env
   cd $HOME/quiche
-  cargo build -v --release --features ffi,pkg-config-meta,qlog
-  mkdir -v deps/boringssl/src/lib
-  ln -vnf $(find target/release -name libcrypto.a -o -name libssl.a) deps/boringssl/src/lib/
+
+  #### Work-around https://github.com/curl/curl/issues/7927 #######
+  #### See https://github.com/alexcrichton/cmake-rs/issues/131 ####
+  sed -i -e 's/cmake = "0.1"/cmake = "=0.1.45"/' Cargo.toml
+
+  cargo build -v --package quiche --release --features ffi,pkg-config-meta,qlog
+  mkdir -v quiche/deps/boringssl/src/lib
+  ln -vnf $(find target/release -name libcrypto.a -o -name libssl.a) quiche/deps/boringssl/src/lib/
 fi
 
 if [ "$TRAVIS_OS_NAME" = linux -a "$RUSTLS_VERSION" ]; then
   cd $HOME
-  git clone --depth=1 --recursive https://github.com/abetterinternet/crustls.git -b "$RUSTLS_VERSION"
+  git clone --depth=1 --recursive https://github.com/rustls/rustls-ffi.git -b "$RUSTLS_VERSION"
   curl https://sh.rustup.rs -sSf | sh -s -- -y
   source $HOME/.cargo/env
   cargo install cbindgen
-  cd $HOME/crustls
+  cd $HOME/rustls-ffi
   make
-  make DESTDIR=$HOME/crust install
+  make DESTDIR=$HOME/rustls install
 fi
 
 if [ $TRAVIS_OS_NAME = linux -a "$WOLFSSL" ]; then
@@ -145,9 +158,6 @@ if [ $TRAVIS_OS_NAME = linux -a "$WOLFSSL" ]; then
 fi
 
 # Install common libraries.
-# The library build directories are set to be cached by .travis.yml. If you are
-# changing a build directory name below (eg a version change) then you must
-# change it in .travis.yml `cache: directories:` as well.
 if [ $TRAVIS_OS_NAME = linux ]; then
 
   if [ "$MESALINK" = "yes" ]; then

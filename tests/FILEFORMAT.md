@@ -148,6 +148,7 @@ Available substitute variables include:
 - `%SRCDIR` - Full path to the source dir
 - `%SSHPORT` - Port number of the SCP/SFTP server
 - `%SSHSRVMD5` - MD5 of SSH server's public key
+- `%SSHSRVSHA256` - SHA256 of SSH server's public key
 - `%SSH_PWD` - Current directory friendly for the SSH server
 - `%TESTNUMBER` - Number of the test case
 - `%TFTP6PORT` - IPv6 port number of the TFTP server
@@ -386,6 +387,8 @@ Features testable here are:
 - `Kerberos`
 - `large_file`
 - `ld_preload`
+- `libssh2`
+- `libssh`
 - `libz`
 - `manual`
 - `Mime`
@@ -414,6 +417,7 @@ Features testable here are:
 - `verbose-strings`
 - `wakeup`
 - `win32`
+- `wolfssh`
 
 as well as each protocol that curl supports.  A protocol only needs to be
 specified if it is different from the server (useful when the server

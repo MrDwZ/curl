@@ -64,7 +64,7 @@ AC_DEFUN([CURL_CHECK_COMPILER], [
 ***
 *** If you wish to help the curl project to better support your compiler
 *** you can report this and the required info on the libcurl development
-*** mailing list: https://cool.haxx.se/mailman/listinfo/curl-library/
+*** mailing list: https://lists.haxx.selistinfo/curl-library/
 ***
 _EOF
   fi
@@ -1033,7 +1033,10 @@ AC_DEFUN([CURL_SET_COMPILER_WARNING_OPTS], [
             CURL_ADD_COMPILER_WARNINGS([tmp_CFLAGS], [alloc-zero])
             tmp_CFLAGS="$tmp_CFLAGS -Wformat-overflow=2"
             tmp_CFLAGS="$tmp_CFLAGS -Wformat-truncation=2"
-            tmp_CFLAGS="$tmp_CFLAGS -Wimplicit-fallthrough=4"
+            if test "$compiler_num" -lt "1200"; then
+              dnl gcc 12 doesn't acknowledge our comment markups
+              tmp_CFLAGS="$tmp_CFLAGS -Wimplicit-fallthrough=4"
+            fi
           fi
           #
         fi

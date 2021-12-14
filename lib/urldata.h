@@ -246,6 +246,7 @@ struct ssl_primary_config {
   long version_max;      /* max supported version the client wants to use*/
   char *CApath;          /* certificate dir (doesn't work on windows) */
   char *CAfile;          /* certificate to verify peer against */
+  char *issuercert;      /* optional issuer certificate filename */
   char *clientcert;
   char *random_file;     /* path to file containing "random" data */
   char *egdsocket;       /* path to file containing the EGD daemon socket */
@@ -254,6 +255,7 @@ struct ssl_primary_config {
   char *pinned_key;
   struct curl_blob *cert_blob;
   struct curl_blob *ca_info_blob;
+  struct curl_blob *issuercert_blob;
   char *curves;          /* list of curves to use */
   BIT(verifypeer);       /* set TRUE if this is desired */
   BIT(verifyhost);       /* set TRUE if CN/SAN must match hostname */
@@ -265,8 +267,6 @@ struct ssl_config_data {
   struct ssl_primary_config primary;
   long certverifyresult; /* result from the certificate verification */
   char *CRLfile;   /* CRL to check certificate revocation */
-  char *issuercert;/* optional issuer certificate filename */
-  struct curl_blob *issuercert_blob;
   curl_ssl_ctx_callback fsslctx; /* function to initialize ssl ctx */
   void *fsslctxp;        /* parameter for call back */
   char *cert_type; /* format for certificate (default: PEM)*/
@@ -330,7 +330,7 @@ struct digestdata {
   char *opaque;
   char *qop;
   char *algorithm;
-  int nc; /* nounce count */
+  int nc; /* nonce count */
   BIT(stale); /* set true for re-negotiation */
   BIT(userhash);
 #endif
@@ -508,7 +508,9 @@ struct ConnectBits {
   BIT(ftp_use_data_ssl); /* Enabled SSL for the data connection */
   BIT(ftp_use_control_ssl); /* Enabled SSL for the control connection */
 #endif
+#ifndef CURL_DISABLE_NETRC
   BIT(netrc);         /* name+password provided by netrc */
+#endif
   BIT(bound); /* set true if bind() has already been done on this socket/
                  connection */
   BIT(multiplex); /* connection is multiplexed */
@@ -702,14 +704,15 @@ struct SingleRequest {
 #ifndef CURL_DISABLE_DOH
   struct dohdata *doh; /* DoH specific data for this request */
 #endif
-  BIT(header);       /* incoming data has HTTP header */
+  BIT(header);        /* incoming data has HTTP header */
   BIT(content_range); /* set TRUE if Content-Range: was found */
-  BIT(upload_done);  /* set to TRUE when doing chunked transfer-encoding
-                        upload and we're uploading the last chunk */
-  BIT(ignorebody);   /* we read a response-body but we ignore it! */
+  BIT(upload_done);   /* set to TRUE when doing chunked transfer-encoding
+                         upload and we're uploading the last chunk */
+  BIT(ignorebody);    /* we read a response-body but we ignore it! */
   BIT(http_bodyless); /* HTTP response status code is between 100 and 199,
                          204 or 304 */
-  BIT(chunk); /* if set, this is a chunked transfer-encoding */
+  BIT(chunk);         /* if set, this is a chunked transfer-encoding */
+  BIT(ignore_cl);     /* ignore content-length */
   BIT(upload_chunky); /* set TRUE if we are doing chunked transfer-encoding
                          on upload */
   BIT(getheader);    /* TRUE if header parsing is wanted */
@@ -832,6 +835,7 @@ struct Curl_handler {
 #define PROTOPT_WILDCARD (1<<12) /* protocol supports wildcard matching */
 #define PROTOPT_USERPWDCTRL (1<<13) /* Allow "control bytes" (< 32 ascii) in
                                        user name and password */
+#define PROTOPT_NOTCPPROXY (1<<14) /* this protocol can't proxy over TCP */
 
 #define CONNCHECK_NONE 0                 /* No checks */
 #define CONNCHECK_ISDEAD (1<<0)          /* Check if the connection is dead. */
@@ -1552,6 +1556,7 @@ enum dupstring {
   STRING_SSH_PRIVATE_KEY, /* path to the private key file for auth */
   STRING_SSH_PUBLIC_KEY,  /* path to the public key file for auth */
   STRING_SSH_HOST_PUBLIC_KEY_MD5, /* md5 of host public key in ascii hex */
+  STRING_SSH_HOST_PUBLIC_KEY_SHA256, /* sha256 of host public key in base64 */
   STRING_SSH_KNOWNHOSTS,  /* file name of knownhosts file */
   STRING_PROXY_SERVICE_NAME, /* Proxy service name */
   STRING_SERVICE_NAME,    /* Service name */
@@ -1649,6 +1654,8 @@ struct UserDefined {
   curl_closesocket_callback fclosesocket; /* function for closing the
                                              socket */
   void *closesocket_client;
+  curl_prereq_callback fprereq; /* pre-initial request callback */
+  void *prereq_userp; /* pre-initial request user data */
 
   void *seek_client;    /* pointer to pass to the seek callback */
   /* the 3 curl_conv_callback functions below are used on non-ASCII hosts */
@@ -1673,6 +1680,8 @@ struct UserDefined {
   long server_response_timeout; /* in milliseconds, 0 means no timeout */
   long maxage_conn;     /* in seconds, max idle time to allow a connection that
                            is to be reused */
+  long maxlifetime_conn; /* in seconds, max time since creation to allow a
+                            connection that is to be reused */
   long tftp_blksize;    /* in bytes, 0 means use default */
   curl_off_t filesize;  /* size of file to upload, -1 means unknown */
   long low_speed_limit; /* bytes/second */
@@ -1728,8 +1737,10 @@ struct UserDefined {
                                */
   curl_sshkeycallback ssh_keyfunc; /* key matching callback */
   void *ssh_keyfunc_userp;         /* custom pointer to callback */
+#ifndef CURL_DISABLE_NETRC
   enum CURL_NETRC_OPTION
        use_netrc;        /* defined in include/curl.h */
+#endif
   curl_usessl use_ssl;   /* if AUTH TLS is to be attempted etc, for FTP or
                             IMAP or POP3 or others! */
   long new_file_perms;    /* Permissions to use when creating remote files */
@@ -1740,6 +1751,7 @@ struct UserDefined {
   unsigned int scope_id;  /* Scope id for IPv6 */
   long allowed_protocols;
   long redir_protocols;
+  long mime_options;      /* Mime option flags. */
   struct curl_slist *mail_rcpt; /* linked list of mail recipients */
   /* Common RTSP header options */
   Curl_RtspReq rtspreq; /* RTSP request type */
@@ -1848,10 +1860,9 @@ struct UserDefined {
   BIT(abstract_unix_socket);
   BIT(disallow_username_in_url); /* disallow username in url */
   BIT(doh); /* DNS-over-HTTPS enabled */
-  BIT(doh_get); /* use GET for DoH requests, instead of POST */
-  BIT(doh_verifypeer);     /* DOH certificate peer verification */
-  BIT(doh_verifyhost);     /* DOH certificate hostname verification */
-  BIT(doh_verifystatus);   /* DOH certificate status verification */
+  BIT(doh_verifypeer);     /* DoH certificate peer verification */
+  BIT(doh_verifyhost);     /* DoH certificate hostname verification */
+  BIT(doh_verifystatus);   /* DoH certificate status verification */
   BIT(http09_allowed); /* allow HTTP/0.9 responses */
   BIT(mail_rcpt_allowfails); /* allow RCPT TO command to fail for some
                                 recipients */

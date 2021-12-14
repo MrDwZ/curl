@@ -2,7 +2,6 @@
 
 [![CII Best Practices](https://bestpractices.coreinfrastructure.org/projects/63/badge)](https://bestpractices.coreinfrastructure.org/projects/63)
 [![Coverity passed](https://scan.coverity.com/projects/curl/badge.svg)](https://scan.coverity.com/projects/curl)
-[![Travis-CI Build Status](https://travis-ci.org/curl/curl.svg?branch=master)](https://travis-ci.org/curl/curl)
 [![AppVeyor Build Status](https://ci.appveyor.com/api/projects/status/l1vv31029huhf4g4?svg=true)](https://ci.appveyor.com/project/curlorg/curl)
 [![Azure DevOps Build Status](https://dev.azure.com/daniel0244/curl/_apis/build/status/curl.curl?branchName=master)](https://dev.azure.com/daniel0244/curl/_build/latest?definitionId=1&branchName=master)
 [![Cirrus Build Status](https://api.cirrus-ci.com/github/curl/curl.svg?branch=master)](https://cirrus-ci.com/github/curl/curl)
@@ -20,7 +19,7 @@ by reading [the INSTALL document](https://curl.se/docs/install.html).
 
 libcurl is the library curl is using to do its job. It is readily available to
 be used by your software. Read [the libcurl.3 man
-page](https://curl.se/libcurl/c/libcurl.html) to learn how!
+page](https://curl.se/libcurl/c/libcurl.html) to learn how.
 
 You can find answers to the most frequent questions we get in [the FAQ
 document](https://curl.se/docs/faq.html).
@@ -48,11 +47,11 @@ downloads.
 
 ## Git
 
-To download the very latest source from the Git server do this:
+To download the latest source from the Git server do this:
 
     git clone https://github.com/curl/curl.git
 
-(you'll get a directory named curl created, filled with the source code)
+(you will get a directory named curl created, filled with the source code)
 
 ## Security problems
 

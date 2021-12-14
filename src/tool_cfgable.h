@@ -158,6 +158,7 @@ struct OperationConfig {
   char *proxy_key_passwd;
   char *pubkey;
   char *hostpubmd5;
+  char *hostpubsha256;
   char *engine;
   char *etag_save_file;
   char *etag_compare_file;
@@ -174,7 +175,7 @@ struct OperationConfig {
   bool use_httpget;
   bool insecure_ok;         /* set TRUE to allow insecure SSL connects */
   bool doh_insecure_ok;     /* set TRUE to allow insecure SSL connects
-                               for DOH */
+                               for DoH */
   bool proxy_insecure_ok;   /* set TRUE to allow insecure SSL connects
                                for proxy */
   bool terminal_binary_ok;
@@ -238,6 +239,7 @@ struct OperationConfig {
   char *ftp_account;        /* for ACCT */
   char *ftp_alternative_to_user;  /* send command if USER/PASS fails */
   int ftp_filemethod;
+  long mime_options;        /* Mime option flags. */
   long tftp_blksize;        /* TFTP BLKSIZE option */
   bool tftp_no_options;     /* do not send TFTP options requests */
   bool ignorecl;            /* --ignore-content-length */
